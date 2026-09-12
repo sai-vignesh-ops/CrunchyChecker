@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CrunchyChecker</title>
+    <style>
+        :root {
+            --bg: #0e0e10;
+            --surface: #18181b;
+            --surface2: #232328;
+            --surface3: #2c2c33;
+            --border: #2e2e38;
+            --border2: #3f3f4e;
+            --text: #f1f1f3;
+            --muted: #8b8b9e;
+            --accent: #f47521;
+            --accent2: #ff6b00;
+            --hit: #22c55e;
+            --free: #38bdf8;
+            --bad: #6b7280;
+            --rate: #facc15;
+            --err: #f87171;
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), #ff9a00);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .logo-badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            background: rgba(244, 117, 33, .15);
+            color: var(--accent);
+            border-radius: 20px;
+            border: 1px solid rgba(244, 117, 33, .25);
+            font-weight: 600;
+        }
+
+        .ws-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .ws-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--bad);
+            transition: background .3s;
+        }
+
+        .ws-dot.connected {
+            background: var(--hit);
+        }
+
+        .ws-dot.running {
+            background: var(--hit);
+            animation: pulse 1.4s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        /* Layout */
+        .main {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .sidebar {
+            width: 290px;
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Sidebar */
+        .s-section {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .s-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            color: var(--muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .field {
+            margin-bottom: 10px;
+        }
+
+        .field-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        textarea,
+        input[type=number],
+        select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 13px;
+            padding: 7px 9px;
+            outline: none;
+            transition: border-color .15s;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea:focus,
+        input:focus,
+        select:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            min-height: 80px;
+        }
+
+        select option {
+            background: var(--surface2);
+        }
+
+        .row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 9px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all .15s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent2);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            background: var(--border2);
+            color: var(--muted);
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: rgba(248, 113, 113, .12);
+            color: var(--err);
+            border: 1px solid rgba(248, 113, 113, .2);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: rgba(248, 113, 113, .22);
+        }
+
+        .btn-danger:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            background: var(--surface3);
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+            border-color: var(--border2);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            width: auto;
+            font-size: 11px;
+        }
+
+        /* Stats */
+        .stats-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 18px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 7px;
+        }
+
+        .stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            display: block;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 1px;
+            display: block;
+        }
+
+        .s-hit .stat-value {
+            color: var(--hit);
+        }
+
+        .s-free .stat-value {
+            color: var(--free);
+        }
+
+        .s-bad .stat-value {
+            color: var(--bad);
+        }
+
+        .s-rate .stat-value {
+            color: var(--rate);
+        }
+
+        .s-err .stat-value {
+            color: var(--err);
+        }
+
+        /* Progress */
+        .prog-wrap {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 9px 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .prog-bg {
+            flex: 1;
+            height: 4px;
+            background: var(--surface3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .prog-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), #ff9a00);
+            border-radius: 4px;
+            transition: width .3s;
+        }
+
+        .prog-txt {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            padding: 0 18px;
+        }
+
+        .tab {
+            padding: 9px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--muted);
+            border-bottom: 2px solid transparent;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* Log */
+        .log-header {
+            padding: 9px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .log-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .log-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .fpill {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface3);
+            color: var(--muted);
+            transition: all .15s;
+        }
+
+        .fpill.active {
+            color: #fff;
+        }
+
+        .fpill[data-f="all"].active {
+            background: var(--border2);
+            color: var(--text);
+        }
+
+        .fpill[data-f="hit"].active {
+            background: rgba(34, 197, 94, .15);
+            border-color: var(--hit);
+            color: var(--hit);
+        }
+
+        .fpill[data-f="free"].active {
+            background: rgba(56, 189, 248, .15);
+            border-color: var(--free);
+            color: var(--free);
+        }
+
+        .fpill[data-f="bad"].active {
+            background: rgba(107, 114, 128, .15);
+            border-color: var(--bad);
+            color: var(--bad);
+        }
+
+        .fpill[data-f="rate"].active {
+            background: rgba(250, 204, 21, .15);
+            border-color: var(--rate);
+            color: var(--rate);
+        }
+
+        .fpill[data-f="err"].active {
+            background: rgba(248, 113, 113, .15);
+            border-color: var(--err);
+            color: var(--err);
+        }
+
+        .log-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 14px;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 3px 5px;
+            border-radius: 4px;
+            margin-bottom: 1px;
+        }
+
+        .log-entry:hover {
+            background: var(--surface2);
+        }
+
+        .log-entry.hidden {
+            display: none;
+        }
+
+        .log-tag {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 3px;
+            min-width: 38px;
+            text-align: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .tag-hit {
+            background: rgba(34, 197, 94, .15);
+            color: var(--hit);
+        }
+
+        .tag-free {
+            background: rgba(56, 189, 248, .15);
+            color: var(--free);
+        }
+
+        .tag-bad {
+            background: rgba(107, 114, 128, .15);
+            color: var(--bad);
+        }
+
+        .tag-rate {
+            background: rgba(250, 204, 21, .15);
+            color: var(--rate);
+        }
+
+        .tag-err {
+            background: rgba(248, 113, 113, .15);
+            color: var(--err);
+        }
+
+        .log-time {
+            color: var(--border2);
+            font-size: 10px;
+            flex-shrink: 0;
+            margin-top: 3px;
+        }
+
+        .log-combo {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .log-detail {
+            color: var(--muted);
+        }
+
+        /* Hits table */
+        .hit-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .hit-tbl th {
+            text-align: left;
+            padding: 7px 14px;
+            color: var(--muted);
+            font-weight: 500;
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+        }
+
+        .hit-tbl td {
+            padding: 6px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hit-tbl tr:hover td {
+            background: var(--surface2);
+        }
+
+        .plan-badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 20px;
+            font-weight: 700;
+            background: rgba(244, 117, 33, .15);
+            color: var(--accent);
+            border: 1px solid rgba(244, 117, 33, .25);
+        }
+
+        /* Connection notice */
+        .conn-notice {
+            background: rgba(248, 113, 113, .08);
+            border: 1px solid rgba(248, 113, 113, .2);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            margin: 10px 18px;
+            font-size: 12px;
+            color: var(--err);
+            display: none;
+        }
+
+        .conn-notice.show {
+            display: block;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 4px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            font-size: 13px;
+            z-index: 999;
+            animation: slideIn .2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(10px);
+                opacity: 0
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1
+            }
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 8px;
+            color: var(--muted);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-icon {
+            font-size: 34px;
+            opacity: .25;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">CR</div>
+            <span class="logo-text">CrunchyChecker</span>
+            <span class="logo-badge">LIVE</span>
+        </div>
+        <div class="ws-pill">
+            <div class="ws-dot" id="wsDot"></div>
+            <span id="wsText">Disconnected</span>
+        </div>
+    </header>
+
+    <div class="main">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <div class="s-section">
+                <div class="s-label">Combo list</div>
+                <div class="field">
+                    <label class="field-label">One per line — email:password</label>
+                    <textarea id="comboInput"
+                        placeholder="user@gmail.com:pass123&#10;another@yahoo.com:mypass"></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('comboFile').click()">📂 Load
+                        .txt</button>
+                    <span id="comboCount" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
+                </div>
+                <input type="file" id="comboFile" accept=".txt" style="display:none"
+                    onchange="loadFile('combo',this)" />
+            </div>
+
+            <div class="s-section">
+                <div class="s-label">Proxy list</div>
+                <div class="field">
+                    <label class="field-label">ip:port:user:pass or socks5://...</label>
+                    <textarea id="proxyInput"
+                        placeholder="198.105.121.200:6424:user:pass&#10;socks5://user:pass@1.2.3.4:1080"></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('proxyFile').click()">📂 Load
+                        .txt</button>
+                    <span id="proxyCount" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
+                </div>
+                <input type="file" id="proxyFile" accept=".txt" style="display:none"
+                    onchange="loadFile('proxy',this)" />
+            </div>
+
+            <div class="s-section">
+                <div class="s-label">Settings</div>
+                <div class="row2">
+                    <div class="field"><label class="field-label">Threads</label><input type="number" id="threads"
+                            value="10" min="1" max="200" /></div>
+                    <div class="field"><label class="field-label">Timeout (s)</label><input type="number" id="timeout"
+                            value="20" min="5" max="60" /></div>
+                </div>
+                <div class="row2">
+                    <div class="field"><label class="field-label">Retries</label><input type="number" id="retries"
+                            value="2" min="0" max="5" /></div>
+                    <div class="field"><label class="field-label">Delay (ms)</label><input type="number" id="delay"
+                            value="0" min="0" max="5000" /></div>
+                </div>
+            </div>
+
+            <div class="s-section">
+                <button class="btn btn-primary" id="startBtn" onclick="startCheck()" disabled>▶ Start checking</button>
+                <div style="height:7px"></div>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopCheck()" disabled>■ Stop</button>
+                <div style="height:7px"></div>
+                <button class="btn btn-ghost" onclick="exportResults()">⬇ Export results</button>
+            </div>
+
+            <div class="s-section" style="font-size:12px;color:var(--muted);line-height:1.7;">
+                <div class="s-label">Bridge status</div>
+                <div id="bridgeInfo">Run <code
+                        style="background:var(--surface3);padding:1px 5px;border-radius:3px;color:var(--text);">python bridge.py</code>
+                    in your project folder, then refresh this page.</div>
+            </div>
+
+        </aside>
+
+        <!-- Content -->
+        <div class="content">
+
+            <!-- Connection warning -->
+            <div class="conn-notice" id="connNotice">
+                ⚠ Not connected to bridge.py — run <strong>python bridge.py</strong> in your project folder first.
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat-card s-hit"><span class="stat-value" id="sHit">0</span><span
+                        class="stat-label">HIT</span></div>
+                <div class="stat-card s-free"><span class="stat-value" id="sFree">0</span><span
+                        class="stat-label">FREE</span></div>
+                <div class="stat-card s-bad"><span class="stat-value" id="sBad">0</span><span
+                        class="stat-label">BAD</span></div>
+                <div class="stat-card s-rate"><span class="stat-value" id="sRate">0</span><span
+                        class="stat-label">RATE</span></div>
+                <div class="stat-card s-err"><span class="stat-value" id="sErr">0</span><span
+                        class="stat-label">ERR</span></div>
+                <div class="stat-card"><span class="stat-value" id="sDone">0</span><span class="stat-label">DONE</span>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="prog-wrap">
+                <div class="prog-bg">
+                    <div class="prog-fill" id="progFill"></div>
+                </div>
+                <span class="prog-txt" id="progTxt">0 / 0</span>
+                <span class="prog-txt" id="speedTxt" style="color:var(--muted);">— c/m</span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tab-bar">
+                <div class="tab active" onclick="switchTab('log',this)">Live log</div>
+                <div class="tab" onclick="switchTab('hits',this)">Hits</div>
+                <div class="tab" onclick="switchTab('guide',this)">Setup guide</div>
+            </div>
+
+            <!-- Log tab -->
+            <div class="tab-content active" id="tab-log">
+                <div class="log-header">
+                    <h3>Output</h3>
+                    <div class="log-controls">
+                        <span class="fpill active" data-f="all" onclick="setFilter('all',this)">All</span>
+                        <span class="fpill" data-f="hit" onclick="setFilter('hit',this)">Hit</span>
+                        <span class="fpill" data-f="free" onclick="setFilter('free',this)">Free</span>
+                        <span class="fpill" data-f="bad" onclick="setFilter('bad',this)">Bad</span>
+                        <span class="fpill" data-f="rate" onclick="setFilter('rate',this)">Rate</span>
+                        <span class="fpill" data-f="err" onclick="setFilter('err',this)">Err</span>
+                        <button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button>
+                        <label
+                            style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;">
+                            <input type="checkbox" id="autoScroll" checked style="width:auto" /> Auto-scroll
+                        </label>
+                    </div>
+                </div>
+                <div class="log-body" id="logBody">
+                    <div class="empty-state" id="emptyLog">
+                        <div class="empty-icon">📋</div>
+                        <div>Waiting to start</div>
+                        <div style="font-size:11px">Connect bridge.py then paste combos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hits tab -->
+            <div class="tab-content" id="tab-hits">
+                <div class="log-header">
+                    <h3 style="color:var(--hit)">✓ Valid accounts</h3>
+                    <button class="btn btn-ghost btn-sm" onclick="exportHits()">⬇ Export hits.txt</button>
+                </div>
+                <div style="flex:1;overflow-y:auto;">
+                    <table class="hit-tbl">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Plan</th>
+                                <th>Expires</th>
+                                <th>Country</th>
+                                <th>Streams</th>
+                                <th>Renew</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hitsBody">
+                            <tr id="hitsEmpty">
+                                <td colspan="7" style="text-align:center;padding:30px;color:var(--muted);">No hits yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Guide tab -->
+            <div class="tab-content" id="tab-guide" style="overflow-y:auto;padding:24px;">
+                <div style="max-width:580px;">
+                    <h2 style="font-size:16px;font-weight:600;margin-bottom:20px;">Project setup — Windows</h2>
+
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                                <span
+                                    style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">1</span>
+                                Create your project folder
+                            </div>
+                            <div
+                                style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:monospace;font-size:12px;color:var(--muted);">
+                                mkdir CrunchyChecker<br>
+                                cd CrunchyChecker
+                            </div>
+                        </div>
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                                <span
+                                    style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">2</span>
+                                Put these 3 files in the folder
+                            </div>
+                            <div style="font-size:13px;color:var(--muted);line-height:2;">
+                                📄 <code
+                                    style="background:var(--surface3);padding:1px 6px;border-radius:3px;color:var(--text);">baron_checker.py</code>
+                                — your original scraper<br>
+                                📄 <code
+                                    style="background:var(--surface3);padding:1px 6px;border-radius:3px;color:var(--text);">bridge.py</code>
+                                — the WebSocket bridge (downloaded above)<br>
+                                📄 <code
+                                    style="background:var(--surface3);padding:1px 6px;border-radius:3px;color:var(--text);">cr_gui.html</code>
+                                — this file
+                            </div>
+                        </div>
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                                <span
+                                    style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">3</span>
+                                Install dependencies (run once)
+                            </div>
+                            <div
+                                style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:monospace;font-size:12px;color:var(--muted);">
+                                pip install requests websockets PySocks
+                            </div>
+                        </div>
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                                <span
+                                    style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">4</span>
+                                Start the bridge every time you use it
+                            </div>
+                            <div
+                                style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:monospace;font-size:12px;color:var(--muted);">
+                                python bridge.py
+                            </div>
+                            <div style="font-size:12px;color:var(--muted);margin-top:8px;">You'll see:
+                                <em>CrunchyChecker Bridge — ws://localhost:8765</em></div>
+                        </div>
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+                            <div style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                                <span
+                                    style="background:var(--accent);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">5</span>
+                                Open cr_gui.html in Chrome/Edge
+                            </div>
+                            <div style="font-size:12px;color:var(--muted);">Double-click <strong>cr_gui.html</strong>.
+                                The bridge dot in the top-right will turn green when connected. Paste your combos and
+                                hit Start.</div>
+                        </div>
+
+                        <div
+                            style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;">
+                            <div style="font-weight:600;margin-bottom:6px;">Proxy format reminder</div>
+                            <div style="font-family:monospace;font-size:12px;color:var(--muted);line-height:2;">
+                                ip:port:user:pass<br>
+                                user:pass:ip:port<br>
+                                ip:port<br>
+                                socks5://user:pass@ip:port
+                            </div>
+                        </div>
+
+                        <div
+                            style="background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.2);border-radius:var(--radius);padding:14px;font-size:12px;color:var(--rate);">
+                            ⚠ Results are saved automatically to <code>output/cr_hits_XXXXXX.txt</code> and
+                            <code>output/cr_free_XXXXXX.txt</code> in the same folder.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────────
+        let ws = null;
+        let wsConnected = false;
+        let running = false;
+        let startTime = null;
+        let allHits = [];
+        let currentFilter = 'all';
+
+        // ── WebSocket ──────────────────────────────────────────────────────────────
+        function connectWS() {
+            try {
+                ws = new WebSocket('ws://localhost:8765');
+            } catch (e) { scheduleReconnect(); return; }
+
+            ws.onopen = () => {
+                wsConnected = true;
+                document.getElementById('wsDot').className = 'ws-dot connected';
+                document.getElementById('wsText').textContent = 'Connected';
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('connNotice').classList.remove('show');
+                document.getElementById('bridgeInfo').textContent = '✓ bridge.py is running.';
+            };
+
+            ws.onclose = () => {
+                wsConnected = false;
+                running = false;
+                document.getElementById('wsDot').className = 'ws-dot';
+                document.getElementById('wsText').textContent = 'Disconnected';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('connNotice').classList.add('show');
+                document.getElementById('bridgeInfo').innerHTML = 'Run <code style="background:var(--surface3);padding:1px 5px;border-radius:3px;color:var(--text);">python bridge.py</code> then refresh.';
+                scheduleReconnect();
+            };
+
+            ws.onerror = () => { ws.close(); };
+
+            ws.onmessage = (e) => {
+                const msg = JSON.parse(e.data);
+                handleMsg(msg);
+            };
+        }
+
+        function scheduleReconnect() {
+            setTimeout(connectWS, 3000);
+        }
+
+        // ── Message handler ────────────────────────────────────────────────────────
+        function handleMsg(msg) {
+            if (msg.type === 'start') {
+                running = true;
+                startTime = Date.now();
+                document.getElementById('wsDot').className = 'ws-dot running';
+                document.getElementById('wsText').textContent = `Running — ${msg.total} combos`;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('progTxt').textContent = `0 / ${msg.total}`;
+                toast(`▶ Started — ${msg.total} combos, ${msg.proxies} proxies`);
+            }
+
+            else if (msg.type === 'result') {
+                const { st, combo, detail, stats, hit_data } = msg;
+                addLog(st, combo, detail || '');
+                updateStats(stats);
+                if (st === 'hit' && hit_data) addHitRow(combo, hit_data);
+            }
+
+            else if (msg.type === 'done') {
+                running = false;
+                const s = msg.stats;
+                document.getElementById('wsDot').className = 'ws-dot connected';
+                document.getElementById('wsText').textContent = msg.stopped ? 'Stopped' : 'Finished';
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('progFill').style.width = msg.stopped ? document.getElementById('progFill').style.width : '100%';
+                toast(msg.stopped
+                    ? `⏹ Stopped — ${s.done} checked`
+                    : `✓ Done — ${s.hit} hits, ${s.free} free, ${s.bad} bad`);
+            }
+
+            else if (msg.type === 'error') {
+                toast('⚠ ' + msg.msg);
+            }
+        }
+
+        // ── Log ────────────────────────────────────────────────────────────────────
+        const tagLabel = { hit: '✓ HIT', free: '~ FREE', bad: '✗ BAD', rate: '! RATE', err: '? ERR' };
+
+        function addLog(type, combo, detail) {
+            const el = document.getElementById('emptyLog');
+            if (el) el.remove();
+
+            const now = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (currentFilter !== 'all' && currentFilter !== type ? ' hidden' : '');
+            entry.dataset.type = type;
+            entry.innerHTML =
+                `<span class="log-time">${now}</span>` +
+                `<span class="log-tag tag-${type}">${tagLabel[type] || type}</span>` +
+                `<span class="log-combo">${combo}</span>` +
+                (detail ? `<span class="log-detail"> — ${detail}</span>` : '');
+
+            const lb = document.getElementById('logBody');
+            lb.appendChild(entry);
+            if (document.getElementById('autoScroll').checked) {
+                lb.scrollTop = lb.scrollHeight;
+            }
+        }
+
+        function updateStats(s) {
+            document.getElementById('sHit').textContent = s.hit || 0;
+            document.getElementById('sFree').textContent = s.free || 0;
+            document.getElementById('sBad').textContent = s.bad || 0;
+            document.getElementById('sRate').textContent = s.rate || 0;
+            document.getElementById('sErr').textContent = s.err || 0;
+            document.getElementById('sDone').textContent = s.done || 0;
+            if (s.total > 0) {
+                const pct = Math.round((s.done / s.total) * 100);
+                document.getElementById('progFill').style.width = pct + '%';
+                document.getElementById('progTxt').textContent = `${s.done} / ${s.total}`;
+                if (startTime) {
+                    const mins = (Date.now() - startTime) / 60000;
+                    const cpm = mins > 0 ? Math.round(s.done / mins) : 0;
+                    document.getElementById('speedTxt').textContent = `${cpm} c/m`;
+                }
+            }
+        }
+
+        function addHitRow(combo, res) {
+            document.getElementById('hitsEmpty').style.display = 'none';
+            allHits.push({ combo, ...res });
+            const email = combo.split(':')[0];
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                `<td style="color:var(--hit);font-family:monospace;font-size:11px;">${email}</td>` +
+                `<td>${res.user || '—'}</td>` +
+                `<td><span class="plan-badge">${res.plan || '—'}</span></td>` +
+                `<td style="color:var(--muted)">${res.expires || '—'}</td>` +
+                `<td>${res.country || '—'}</td>` +
+                `<td style="text-align:center">${res.streams || '—'}</td>` +
+                `<td style="color:${res.renew === 'Yes' ? 'var(--hit)' : 'var(--muted)'}">${res.renew || '—'}</td>`;
+            document.getElementById('hitsBody').appendChild(tr);
+        }
+
+        // ── Controls ───────────────────────────────────────────────────────────────
+        function startCheck() {
+            if (!wsConnected) { toast('⚠ Bridge not connected'); return; }
+            const combos = document.getElementById('comboInput').value.split('\n').filter(l => l.trim());
+            const proxies = document.getElementById('proxyInput').value.split('\n').filter(l => l.trim());
+            if (!combos.length) { toast('⚠ Paste combos first'); return; }
+
+            // Reset UI
+            allHits = [];
+            document.getElementById('logBody').innerHTML = '';
+            document.getElementById('hitsBody').innerHTML =
+                '<tr id="hitsEmpty"><td colspan="7" style="text-align:center;padding:30px;color:var(--muted);">No hits yet</td></tr>';
+            ['sHit', 'sFree', 'sBad', 'sRate', 'sErr', 'sDone'].forEach(id => document.getElementById(id).textContent = '0');
+            document.getElementById('progFill').style.width = '0%';
+            document.getElementById('progTxt').textContent = '0 / 0';
+            document.getElementById('speedTxt').textContent = '— c/m';
+
+            ws.send(JSON.stringify({
+                action: 'start',
+                combos,
+                proxies,
+                threads: document.getElementById('threads').value,
+                timeout: document.getElementById('timeout').value,
+                retries: document.getElementById('retries').value,
+                delay: document.getElementById('delay').value,
+            }));
+        }
+
+        function stopCheck() {
+            if (ws && wsConnected) ws.send(JSON.stringify({ action: 'stop' }));
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        function setFilter(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.log-entry').forEach(e => {
+                e.classList.toggle('hidden', f !== 'all' && e.dataset.type !== f);
+            });
+        }
+
+        function clearLog() {
+            document.getElementById('logBody').innerHTML = '';
+        }
+
+        function switchTab(name, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+        }
+
+        // ── File loading ───────────────────────────────────────────────────────────
+        function loadFile(type, input) {
+            const f = input.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = e => {
+                document.getElementById(type + 'Input').value = e.target.result;
+                updateCounts();
+                toast(`✓ Loaded ${f.name}`);
+            };
+            r.readAsText(f);
+            input.value = '';
+        }
+
+        function updateCounts() {
+            const c = document.getElementById('comboInput').value.split('\n').filter(l => l.trim()).length;
+            const p = document.getElementById('proxyInput').value.split('\n').filter(l => l.trim()).length;
+            document.getElementById('comboCount').textContent = c ? `${c} combos` : '';
+            document.getElementById('proxyCount').textContent = p ? `${p} proxies` : '';
+        }
+        document.getElementById('comboInput').addEventListener('input', updateCounts);
+        document.getElementById('proxyInput').addEventListener('input', updateCounts);
+
+        // ── Export ─────────────────────────────────────────────────────────────────
+        function exportResults() {
+            const lines = [...document.querySelectorAll('.log-entry')].map(e => {
+                const type = e.dataset.type;
+                const combo = e.querySelector('.log-combo')?.textContent || '';
+                const detail = e.querySelector('.log-detail')?.textContent || '';
+                return `[${type.toUpperCase()}] ${combo}${detail}`;
+            });
+            if (!lines.length) { toast('Nothing to export'); return; }
+            download('cr_results.txt', lines.join('\n'));
+        }
+
+        function exportHits() {
+            if (!allHits.length) { toast('No hits'); return; }
+            const lines = allHits.map(h =>
+                `${h.combo} | Plan:${h.plan} | Exp:${h.expires} | Country:${h.country} | Streams:${h.streams} | Renew:${h.renew} | Payment:${h.payment || '—'}`
+            );
+            download('cr_hits.txt', lines.join('\n'));
+        }
+
+        function download(name, content) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+            a.download = name; a.click();
+        }
+
+        // ── Toast ──────────────────────────────────────────────────────────────────
+        function toast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast'; t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2800);
+        }
+
+        // ── Init ───────────────────────────────────────────────────────────────────
+        connectWS();
+    </script>
+</body>
+
+</html>
