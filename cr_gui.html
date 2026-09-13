@@ -962,7 +962,7 @@
         // ── WebSocket ──────────────────────────────────────────────────────────────
         function connectWS() {
             try {
-                ws = new WebSocket('wss://crunchychecker.onrender.com');
+                ws = new WebSocket('wss://crunchychecker-ru5y.onrender.com:10001');
             } catch (e) { scheduleReconnect(); return; }
 
             ws.onopen = () => {
