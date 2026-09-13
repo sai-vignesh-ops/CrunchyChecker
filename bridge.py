@@ -349,8 +349,13 @@ from aiohttp import web
 import aiohttp
 
 async def http_handler(request):
-    """Handle HTTP health check requests."""
-    return web.Response(text="CrunchyChecker OK")
+    """Serve cr_gui.html as the main page."""
+    html_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cr_gui.html")
+    if os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return web.Response(text=html_content, content_type="text/html")
+    return web.Response(text="cr_gui.html not found", status=404)
 
 async def ws_handler(request):
     """Handle WebSocket upgrade requests."""
