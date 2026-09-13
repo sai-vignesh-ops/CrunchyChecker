@@ -911,7 +911,8 @@
                                 python bridge.py
                             </div>
                             <div style="font-size:12px;color:var(--muted);margin-top:8px;">You'll see:
-                                <em>CrunchyChecker Bridge — ws://localhost:8765</em></div>
+                                <em>CrunchyChecker Bridge — ws://localhost:8765</em>
+                            </div>
                         </div>
 
                         <div
@@ -961,7 +962,7 @@
         // ── WebSocket ──────────────────────────────────────────────────────────────
         function connectWS() {
             try {
-                ws = new WebSocket('ws://localhost:8765');
+                ws = new WebSocket('wss://crunchychecker.onrender.com');
             } catch (e) { scheduleReconnect(); return; }
 
             ws.onopen = () => {
