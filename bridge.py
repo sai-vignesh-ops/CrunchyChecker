@@ -344,35 +344,74 @@ async def handler(websocket):
         _connected_clients.discard(websocket)
         print(f"[WS] Client disconnected ({len(_connected_clients)} total)")
 
-# ── HTTP health check (required by Render) ────────────────────────────────────
-from http.server import HTTPServer, BaseHTTPRequestHandler
+# ── HTTP + WebSocket on same port (required by Render) ───────────────────────
+from aiohttp import web
+import aiohttp
 
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"CrunchyChecker OK")
-    def log_message(self, *args):
-        pass  # silence HTTP logs
+async def http_handler(request):
+    """Handle HTTP health check requests."""
+    return web.Response(text="CrunchyChecker OK")
 
-def run_health_server(port):
-    HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever()
+async def ws_handler(request):
+    """Handle WebSocket upgrade requests."""
+    ws = web.WebSocketResponse()
+    await ws.prepare(request)
+
+    _connected_clients.add(ws)
+    loop = asyncio.get_event_loop()
+    print(f"[WS] Client connected ({len(_connected_clients)} total)")
+
+    try:
+        async for msg in ws:
+            if msg.type == aiohttp.WSMsgType.TEXT:
+                try:
+                    data = json.loads(msg.data)
+                except:
+                    continue
+                action = data.get("action")
+                if action == "start":
+                    t = threading.Thread(
+                        target=run_checker, args=(data, loop), daemon=True
+                    )
+                    t.start()
+                elif action == "stop":
+                    _stop_flag["stop"] = True
+            elif msg.type == aiohttp.WSMsgType.ERROR:
+                break
+    finally:
+        _connected_clients.discard(ws)
+        print(f"[WS] Client disconnected ({len(_connected_clients)} total)")
+
+    return ws
+
+def broadcast(loop, msg_dict):
+    """Thread-safe broadcast to all connected aiohttp WebSocket clients."""
+    msg = json.dumps(msg_dict)
+    async def _send():
+        dead = set()
+        for ws in list(_connected_clients):
+            try:
+                await ws.send_str(msg)
+            except:
+                dead.add(ws)
+        _connected_clients.difference_update(dead)
+    asyncio.run_coroutine_threadsafe(_send(), loop)
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 PORT = int(os.environ.get("PORT", 10000))
 
 async def main():
-    # Start HTTP health server on same port Render expects
-    health_thread = threading.Thread(
-        target=run_health_server, args=(PORT,), daemon=True
-    )
-    health_thread.start()
+    app = web.Application()
+    app.router.add_get("/", http_handler)
+    app.router.add_get("/ws", ws_handler)
 
-    # WebSocket runs on PORT+1
-    ws_port = PORT + 1
-    print(f"CrunchyChecker Bridge — WS port {ws_port} | Health port {PORT}")
-    async with websockets.serve(handler, "0.0.0.0", ws_port):
-        await asyncio.Future()
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", PORT)
+    await site.start()
+    print(f"CrunchyChecker running on port {PORT}")
+    print(f"WebSocket endpoint: wss://your-app.onrender.com/ws")
+    await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
     asyncio.run(main())
