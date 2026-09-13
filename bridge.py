@@ -12,7 +12,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from datetime import datetime
 
-
 # ── Shared state ──────────────────────────────────────────────────────────────
 _lock = Lock()
 _stop_flag = {"stop": False}
@@ -345,15 +344,35 @@ async def handler(websocket):
         _connected_clients.discard(websocket)
         print(f"[WS] Client disconnected ({len(_connected_clients)} total)")
 
+# ── HTTP health check (required by Render) ────────────────────────────────────
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"CrunchyChecker OK")
+    def log_message(self, *args):
+        pass  # silence HTTP logs
+
+def run_health_server(port):
+    HTTPServer(("0.0.0.0", port), HealthHandler).serve_forever()
+
 # ── Entry point ───────────────────────────────────────────────────────────────
-import os
-PORT = int(os.environ.get("PORT", 8765))
+PORT = int(os.environ.get("PORT", 10000))
 
 async def main():
-    print(f"Bridge running on port {PORT}")
-    async with websockets.serve(handler, "0.0.0.0", PORT):
+    # Start HTTP health server on same port Render expects
+    health_thread = threading.Thread(
+        target=run_health_server, args=(PORT,), daemon=True
+    )
+    health_thread.start()
+
+    # WebSocket runs on PORT+1
+    ws_port = PORT + 1
+    print(f"CrunchyChecker Bridge — WS port {ws_port} | Health port {PORT}")
+    async with websockets.serve(handler, "0.0.0.0", ws_port):
         await asyncio.Future()
-        await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
     asyncio.run(main())
