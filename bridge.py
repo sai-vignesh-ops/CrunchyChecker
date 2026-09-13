@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 from datetime import datetime
 
+
 # ── Shared state ──────────────────────────────────────────────────────────────
 _lock = Lock()
 _stop_flag = {"stop": False}
@@ -345,12 +346,13 @@ async def handler(websocket):
         print(f"[WS] Client disconnected ({len(_connected_clients)} total)")
 
 # ── Entry point ───────────────────────────────────────────────────────────────
+import os
+PORT = int(os.environ.get("PORT", 8765))
+
 async def main():
-    print("=" * 50)
-    print("  CrunchyChecker Bridge  —  ws://localhost:8765")
-    print("  Open cr_gui.html in your browser to start")
-    print("=" * 50)
-    async with websockets.serve(handler, "localhost", 8765):
+    print(f"Bridge running on port {PORT}")
+    async with websockets.serve(handler, "0.0.0.0", PORT):
+        await asyncio.Future()
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
